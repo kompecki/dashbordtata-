@@ -1,0 +1,252 @@
+title: Dom - Energia
+views:
+  - title: Energia
+    path: energia
+    icon: mdi:home-lightning-bolt
+    cards:
+      - type: markdown
+        content: >
+          # Dashboard energii
+
+          Widok pokazuje aktualny bilans domu: panele fotowoltaiczne, bank
+          energii, pobor z sieci oraz zuzycie domu. Podmien encje `sensor.*`
+          na swoje odpowiedniki z Home Assistanta.
+
+      - type: grid
+        title: Energia teraz
+        columns: 3
+        square: false
+        cards:
+          - type: gauge
+            entity: sensor.pv_power
+            name: Panele PV
+            unit: W
+            min: 0
+            max: 10000
+            needle: true
+            severity:
+              green: 3000
+              yellow: 1000
+              red: 0
+
+          - type: gauge
+            entity: sensor.energy_bank_state_of_charge
+            name: Bank energii
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+            severity:
+              green: 70
+              yellow: 30
+              red: 0
+
+          - type: gauge
+            entity: sensor.grid_power
+            name: Siec
+            unit: W
+            min: -8000
+            max: 8000
+            needle: true
+            severity:
+              green: -8000
+              yellow: 0
+              red: 3000
+
+      - type: entities
+        title: Przeplywy mocy
+        show_header_toggle: false
+        entities:
+          - entity: sensor.house_power
+            name: Zuzycie domu
+            icon: mdi:home-lightning-bolt
+          - entity: sensor.pv_power
+            name: Produkcja z paneli PV
+            icon: mdi:solar-power-variant
+          - entity: sensor.energy_bank_power
+            name: Moc banku energii
+            icon: mdi:home-battery
+          - entity: sensor.energy_bank_charge_power
+            name: Ladowanie banku energii
+            icon: mdi:battery-arrow-up
+          - entity: sensor.energy_bank_discharge_power
+            name: Rozladowanie banku energii
+            icon: mdi:battery-arrow-down
+          - entity: sensor.grid_power
+            name: Siec - import dodatni / eksport ujemny
+            icon: mdi:transmission-tower
+
+      - type: conditional
+        conditions:
+          - entity: sensor.energy_bank_state_of_charge
+            below: 20
+        card:
+          type: markdown
+          content: >
+            ## Uwaga: niski poziom banku energii
+
+            Bank energii ma mniej niz 20% naladowania. Sprawdz prognoze PV i
+            ustawienia trybu pracy falownika.
+
+      - type: grid
+        title: Dzisiaj
+        columns: 4
+        square: false
+        cards:
+          - type: entity
+            entity: sensor.pv_energy_today
+            name: Produkcja PV
+            icon: mdi:solar-power-variant
+          - type: entity
+            entity: sensor.house_energy_today
+            name: Zuzycie domu
+            icon: mdi:home-lightning-bolt
+          - type: entity
+            entity: sensor.grid_import_today
+            name: Import z sieci
+            icon: mdi:transmission-tower-import
+          - type: entity
+            entity: sensor.grid_export_today
+            name: Eksport do sieci
+            icon: mdi:transmission-tower-export
+
+      - type: history-graph
+        title: Moc - ostatnie 24 godziny
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.pv_power
+            name: PV
+          - entity: sensor.house_power
+            name: Dom
+          - entity: sensor.energy_bank_power
+            name: Bank energii
+          - entity: sensor.grid_power
+            name: Siec
+
+      - type: statistics-graph
+        title: Energia dzienna
+        days_to_show: 14
+        period: day
+        stat_types:
+          - sum
+        entities:
+          - sensor.pv_energy_today
+          - sensor.house_energy_today
+          - sensor.grid_import_today
+          - sensor.grid_export_today
+
+  - title: Bank energii
+    path: bank-energii
+    icon: mdi:home-battery
+    cards:
+      - type: grid
+        title: Stan magazynu
+        columns: 3
+        square: false
+        cards:
+          - type: gauge
+            entity: sensor.energy_bank_state_of_charge
+            name: Naladowanie
+            unit: "%"
+            min: 0
+            max: 100
+            needle: true
+            severity:
+              green: 70
+              yellow: 30
+              red: 0
+          - type: entity
+            entity: sensor.energy_bank_power
+            name: Moc banku
+            icon: mdi:home-battery
+          - type: entity
+            entity: sensor.energy_bank_status
+            name: Tryb pracy
+            icon: mdi:battery-sync
+
+      - type: entities
+        title: Szczegoly banku energii
+        show_header_toggle: false
+        entities:
+          - entity: sensor.energy_bank_state_of_charge
+            name: Poziom naladowania
+          - entity: sensor.energy_bank_power
+            name: Moc netto
+          - entity: sensor.energy_bank_charge_power
+            name: Ladowanie
+          - entity: sensor.energy_bank_discharge_power
+            name: Rozladowanie
+          - entity: sensor.energy_bank_energy_charged_today
+            name: Energia naladowana dzisiaj
+          - entity: sensor.energy_bank_energy_discharged_today
+            name: Energia oddana dzisiaj
+          - entity: sensor.energy_bank_temperature
+            name: Temperatura
+
+      - type: history-graph
+        title: Bank energii - ostatnie 24 godziny
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.energy_bank_state_of_charge
+            name: Naladowanie
+          - entity: sensor.energy_bank_charge_power
+            name: Ladowanie
+          - entity: sensor.energy_bank_discharge_power
+            name: Rozladowanie
+
+  - title: PV i siec
+    path: pv-siec
+    icon: mdi:solar-power-variant
+    cards:
+      - type: grid
+        title: Fotowoltaika i siec
+        columns: 4
+        square: false
+        cards:
+          - type: entity
+            entity: sensor.pv_power
+            name: Moc PV
+            icon: mdi:solar-power-variant
+          - type: entity
+            entity: sensor.pv_energy_today
+            name: PV dzisiaj
+            icon: mdi:solar-panel-large
+          - type: entity
+            entity: sensor.grid_power
+            name: Moc sieci
+            icon: mdi:transmission-tower
+          - type: entity
+            entity: sensor.grid_voltage
+            name: Napiecie sieci
+            icon: mdi:sine-wave
+
+      - type: entities
+        title: Liczniki energii
+        show_header_toggle: false
+        entities:
+          - entity: sensor.pv_energy_today
+            name: PV dzisiaj
+          - entity: sensor.pv_energy_month
+            name: PV w tym miesiacu
+          - entity: sensor.grid_import_today
+            name: Import dzisiaj
+          - entity: sensor.grid_export_today
+            name: Eksport dzisiaj
+          - entity: sensor.grid_import_month
+            name: Import w tym miesiacu
+          - entity: sensor.grid_export_month
+            name: Eksport w tym miesiacu
+
+      - type: history-graph
+        title: PV kontra siec
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.pv_power
+            name: Moc PV
+          - entity: sensor.grid_power
+            name: Moc sieci
+          - entity: sensor.house_power
+            name: Zuzycie domu
