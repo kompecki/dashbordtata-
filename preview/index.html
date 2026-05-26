@@ -629,6 +629,235 @@
       to { stroke-dashoffset: 0; }
     }
 
+    @media (max-width: 430px) {
+      .app {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .clock {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .hero {
+        height: 735px;
+        border-radius: 28px;
+      }
+
+      .orbit {
+        left: 7%;
+        right: 7%;
+        top: 52px;
+        height: 124px;
+      }
+
+      .sun {
+        width: 44px;
+        height: 44px;
+        font-size: 23px;
+      }
+
+      .sun-value {
+        top: 52px;
+        font-size: 12px;
+      }
+
+      .time-label {
+        top: 84px;
+      }
+
+      .inverter {
+        top: 192px;
+        min-width: 112px;
+        padding: 12px 13px;
+        border-radius: 22px;
+      }
+
+      .node-icon {
+        margin-bottom: 4px;
+        font-size: 20px;
+      }
+
+      .node-name {
+        font-size: 10px;
+      }
+
+      .node-value {
+        margin-top: 4px;
+        font-size: 15px;
+      }
+
+      .node-sub {
+        font-size: 10px;
+      }
+
+      .battery-block {
+        left: 12px;
+        top: 312px;
+        gap: 7px;
+      }
+
+      .battery-shell {
+        width: 44px;
+        height: 88px;
+        border-radius: 14px 14px 11px 11px;
+      }
+
+      .battery-shell::before {
+        left: 12px;
+        width: 18px;
+      }
+
+      .battery-bolt {
+        font-size: 19px;
+      }
+
+      .grid-block {
+        right: 12px;
+        top: 312px;
+        gap: 7px;
+      }
+
+      .tower {
+        width: 50px;
+        height: 88px;
+        border-radius: 18px;
+        font-size: 45px;
+      }
+
+      .side-label span,
+      .home-text span,
+      .ev-block span {
+        font-size: 9px;
+        letter-spacing: 0.08em;
+      }
+
+      .side-label strong,
+      .home-text strong,
+      .ev-block strong {
+        font-size: 14px;
+      }
+
+      .side-label em {
+        display: none;
+      }
+
+      .home-block {
+        top: 456px;
+        padding: 10px 12px;
+        border-radius: 21px;
+      }
+
+      .house {
+        width: 48px;
+        height: 48px;
+        border-radius: 17px;
+        font-size: 34px;
+      }
+
+      .ev-block {
+        left: 50%;
+        right: auto;
+        top: 536px;
+        padding: 9px 11px;
+        transform: translateX(-50%);
+      }
+
+      .car {
+        width: 42px;
+        height: 32px;
+        border-radius: 14px;
+      }
+
+      .pv-flow {
+        top: 148px;
+        height: 66px;
+      }
+
+      .battery-flow {
+        left: 66px;
+        top: 356px;
+        width: calc(50% - 91px);
+      }
+
+      .grid-flow {
+        right: 66px;
+        top: 356px;
+        width: calc(50% - 91px);
+      }
+
+      .home-flow {
+        top: 274px;
+        height: 205px;
+      }
+
+      .ev-flow {
+        display: none;
+      }
+
+      .hero-footer {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        bottom: 12px;
+        gap: 7px;
+      }
+
+      .hero-footer div {
+        padding: 10px 8px;
+      }
+
+      .hero-footer span {
+        font-size: 9px;
+      }
+
+      .hero-footer strong {
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .hero {
+        height: 755px;
+      }
+
+      .clock {
+        display: none;
+      }
+
+      .battery-block,
+      .grid-block {
+        top: 318px;
+      }
+
+      .battery-shell {
+        width: 40px;
+      }
+
+      .tower {
+        width: 46px;
+      }
+
+      .side-label strong,
+      .home-text strong,
+      .ev-block strong {
+        font-size: 13px;
+      }
+
+      .battery-flow {
+        left: 60px;
+        width: calc(50% - 83px);
+      }
+
+      .grid-flow {
+        right: 60px;
+        width: calc(50% - 83px);
+      }
+    }
+
     @media (min-width: 520px) {
       .app {
         padding-top: 28px;
