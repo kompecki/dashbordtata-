@@ -88,7 +88,6 @@ views:
   - title: Flow
     path: energy-flow-wow
     icon: mdi:lightning-bolt-circle
-    theme: noctis
     cards:
       - type: custom:button-card
         show_name: false
