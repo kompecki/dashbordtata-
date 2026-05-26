@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Energy Flow Pro - podglad</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050914;
+      --panel: rgba(10, 19, 34, 0.82);
+      --panel-strong: rgba(13, 25, 44, 0.94);
+      --line: rgba(140, 205, 255, 0.18);
+      --text: #f6fbff;
+      --muted: rgba(226, 241, 255, 0.62);
+      --pv: #ffd84a;
+      --battery: #4de8bd;
+      --home: #64d2ff;
+      --grid: #ff7b7b;
+      --ev: #ff8f5a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(66, 153, 255, 0.26), transparent 34rem),
+        radial-gradient(circle at 10% 34%, rgba(77, 232, 189, 0.14), transparent 22rem),
+        radial-gradient(circle at 92% 48%, rgba(255, 123, 123, 0.12), transparent 20rem),
+        linear-gradient(180deg, #07101f 0%, var(--bg) 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, black 0%, transparent 82%);
+    }
+
+    .app {
+      width: min(100%, 480px);
+      margin: 0 auto;
+      padding: max(18px, env(safe-area-inset-top)) 14px 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .eyebrow {
+      color: #7dd3fc;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.24em;
+    }
+
+    h1 {
+      margin: 4px 0 0;
+      font-size: clamp(23px, 7vw, 34px);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+    }
+
+    .clock {
+      flex: none;
+      padding: 9px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      color: #e3f7ff;
+      font-size: 13px;
+      font-weight: 850;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .hero {
+      position: relative;
+      height: 650px;
+      overflow: hidden;
+      border: 1px solid rgba(115, 190, 255, 0.22);
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 50% 10%, rgba(78, 154, 255, 0.32), transparent 34%),
+        radial-gradient(circle at 18% 38%, rgba(38, 227, 166, 0.16), transparent 32%),
+        linear-gradient(180deg, rgba(9, 18, 33, 0.98) 0%, rgba(9, 15, 27, 0.98) 100%);
+      box-shadow:
+        0 30px 90px rgba(0, 0, 0, 0.46),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: -20%;
+      background: conic-gradient(from 90deg, transparent, rgba(120, 210, 255, 0.08), transparent 28%);
+      animation: slowSpin 18s linear infinite;
+    }
+
+    .orbit {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      top: 58px;
+      height: 142px;
+      z-index: 2;
+    }
+
+    .orbit-line {
+      position: absolute;
+      inset: 26px 0 0;
+      border-top: 2px solid rgba(138, 198, 255, 0.42);
+      border-radius: 50% 50% 0 0;
+      transform: perspective(260px) rotateX(54deg);
+      box-shadow: 0 -8px 28px rgba(64, 156, 255, 0.22);
+    }
+
+    .sun {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 50px;
+      height: 50px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #2b1b00;
+      font-size: 26px;
+      background: radial-gradient(circle, #fff6a8 0%, #ffd84a 46%, #ff9f1c 100%);
+      animation: floatSun 4.2s ease-in-out infinite, pulseGlow 2.6s ease-in-out infinite;
+      transform: translateX(-50%);
+    }
+
+    .sun-value {
+      position: absolute;
+      left: 50%;
+      top: 58px;
+      z-index: 3;
+      transform: translateX(-50%);
+      padding: 6px 12px;
+      border: 1px solid rgba(255, 216, 74, 0.36);
+      border-radius: 999px;
+      color: #ffe88a;
+      background: rgba(255, 198, 41, 0.16);
+      font-size: 13px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .time-label {
+      position: absolute;
+      top: 92px;
+      color: rgba(226, 241, 255, 0.48);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .time-label.left {
+      left: 0;
+    }
+
+    .time-label.right {
+      right: 0;
+    }
+
+    .node {
+      position: absolute;
+      z-index: 8;
+    }
+
+    .inverter {
+      left: 50%;
+      top: 226px;
+      min-width: 132px;
+      padding: 16px 18px;
+      border: 2px solid rgba(255, 201, 68, 0.78);
+      border-radius: 26px;
+      text-align: center;
+      background: linear-gradient(160deg, rgba(16, 29, 49, 0.95), rgba(8, 14, 25, 0.95));
+      box-shadow: 0 0 34px rgba(255, 196, 50, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+      transform: translateX(-50%);
+    }
+
+    .node-icon {
+      font-size: 24px;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 12px rgba(255, 216, 74, 0.45));
+    }
+
+    .node-name {
+      color: var(--pv);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .node-value {
+      margin-top: 6px;
+      font-size: 18px;
+      font-weight: 950;
+    }
+
+    .node-sub {
+      margin-top: 4px;
+      color: #56f0a6;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .battery-block {
+      left: 16px;
+      top: 214px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .battery-shell {
+      position: relative;
+      width: 56px;
+      height: 108px;
+      overflow: hidden;
+      border: 2px solid rgba(113, 234, 255, 0.48);
+      border-radius: 17px 17px 13px 13px;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 24px rgba(77, 195, 255, 0.24);
+    }
+
+    .battery-shell::before {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: 17px;
+      width: 22px;
+      height: 8px;
+      border-radius: 6px 6px 0 0;
+      background: rgba(113, 234, 255, 0.46);
+    }
+
+    .battery-fill {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 77%;
+      background: linear-gradient(90deg, #1dd1a1, #54e8ff, #1dd1a1);
+      background-size: 80px 100%;
+      animation: fillWave 2.2s linear infinite;
+      transition: height 700ms ease;
+    }
+
+    .battery-bolt {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #06111d;
+      font-size: 23px;
+      font-weight: 950;
+    }
+
+    .side-label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+      text-shadow: 0 1px 18px rgba(0, 0, 0, 0.4);
+    }
+
+    .side-label.right {
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    .side-label span,
+    .home-text span,
+    .ev-block span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .side-label strong,
+    .home-text strong,
+    .ev-block strong {
+      margin-top: 4px;
+      color: white;
+      font-size: 18px;
+      font-weight: 950;
+    }
+
+    .side-label em {
+      margin-top: 2px;
+      color: #8ee6ff;
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 850;
+    }
+
+    .grid-block {
+      right: 16px;
+      top: 224px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tower {
+      width: 64px;
+      height: 104px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 230, 109, 0.22);
+      border-radius: 22px;
+      color: #ffe66d;
+      background: rgba(255, 230, 109, 0.09);
+      font-size: 58px;
+      filter: drop-shadow(0 0 20px rgba(255, 230, 109, 0.25));
+    }
+
+    .home-block {
+      left: 50%;
+      top: 404px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 24px;
+      background: rgba(9, 18, 32, 0.86);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+      transform: translateX(-50%);
+    }
+
+    .house {
+      width: 60px;
+      height: 60px;
+      display: grid;
+      place-items: center;
+      border-radius: 20px;
+      color: #07101f;
+      background: linear-gradient(145deg, #eaffff, #6ed6ff);
+      box-shadow: 0 0 28px rgba(110, 214, 255, 0.35);
+      font-size: 42px;
+    }
+
+    .ev-block {
+      right: 16px;
+      top: 418px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 22px;
+      background: rgba(9, 18, 32, 0.82);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
+    }
+
+    .car {
+      width: 48px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      color: white;
+      background: linear-gradient(145deg, #ff416c, #ffb347);
+      box-shadow: 0 0 28px rgba(255, 88, 92, 0.32);
+    }
+
+    .flow-line {
+      position: absolute;
+      z-index: 4;
+      border-radius: 999px;
+      opacity: 0.92;
+      pointer-events: none;
+    }
+
+    .vertical {
+      width: 4px;
+      background: linear-gradient(180deg, transparent 0%, rgba(255, 232, 138, 0.2) 15%, #ffe66d 45%, #64d2ff 55%, transparent 86%);
+      background-size: 100% 72px;
+      animation: energyDown 1.05s linear infinite;
+      filter: drop-shadow(0 0 10px rgba(100, 210, 255, 0.50));
+    }
+
+    .horizontal {
+      height: 4px;
+      background: linear-gradient(90deg, transparent 0%, rgba(100, 210, 255, 0.18) 14%, #64d2ff 44%, #6dffbe 60%, transparent 86%);
+      background-size: 72px 100%;
+      animation: energySide 1.15s linear infinite;
+      filter: drop-shadow(0 0 10px rgba(100, 210, 255, 0.50));
+    }
+
+    .pv-flow {
+      left: calc(50% - 2px);
+      top: 170px;
+      height: 96px;
+    }
+
+    .battery-flow {
+      left: 118px;
+      top: 303px;
+      width: calc(50% - 182px);
+      filter: drop-shadow(0 0 10px rgba(109, 255, 190, 0.58));
+    }
+
+    .grid-flow {
+      right: 118px;
+      top: 303px;
+      width: calc(50% - 182px);
+      filter: drop-shadow(0 0 10px rgba(255, 230, 109, 0.58));
+    }
+
+    .home-flow {
+      left: calc(50% - 2px);
+      top: 328px;
+      height: 94px;
+    }
+
+    .ev-flow {
+      right: 94px;
+      top: 466px;
+      width: calc(50% - 154px);
+      filter: drop-shadow(0 0 10px rgba(255, 93, 126, 0.46));
+    }
+
+    .hero-footer {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      z-index: 9;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .hero-footer div,
+    .metric-card,
+    .chart-card {
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: linear-gradient(145deg, rgba(21, 33, 54, 0.88), rgba(8, 15, 29, 0.94));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 14px 34px rgba(0, 0, 0, 0.24);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-footer div {
+      min-width: 0;
+      padding: 12px 10px;
+      border-radius: 18px;
+      text-align: center;
+    }
+
+    .hero-footer span,
+    .metric-card span {
+      display: block;
+      color: rgba(226, 241, 255, 0.58);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hero-footer strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .section-title {
+      margin: 22px 4px 10px;
+      color: rgba(246, 251, 255, 0.94);
+      font-size: 15px;
+      font-weight: 950;
+      letter-spacing: 0.02em;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric-card {
+      min-height: 112px;
+      padding: 15px;
+      border-radius: 22px;
+    }
+
+    .metric-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .metric-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.07);
+      font-size: 22px;
+      filter: drop-shadow(0 0 12px currentColor);
+    }
+
+    .metric-card strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+    }
+
+    .chart-card {
+      margin-top: 10px;
+      padding: 16px 12px 12px;
+      border-radius: 24px;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px 10px;
+    }
+
+    .chart-head strong {
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 3px;
+      border-radius: 999px;
+    }
+
+    svg {
+      width: 100%;
+      height: 170px;
+      overflow: visible;
+    }
+
+    .area {
+      opacity: 0.16;
+    }
+
+    .spark {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 900;
+      animation: drawLine 4.5s ease-in-out infinite alternate;
+    }
+
+    .footer-note {
+      margin: 16px 6px 0;
+      color: rgba(226, 241, 255, 0.48);
+      font-size: 12px;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    @keyframes energyDown {
+      from { background-position: 0 0; }
+      to { background-position: 0 72px; }
+    }
+
+    @keyframes energySide {
+      from { background-position: 0 0; }
+      to { background-position: 72px 0; }
+    }
+
+    @keyframes floatSun {
+      0%, 100% { transform: translate(-50%, 0) scale(1); }
+      50% { transform: translate(-50%, -10px) scale(1.08); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 74, 0.35), inset 0 0 18px rgba(255, 255, 255, 0.08); }
+      50% { box-shadow: 0 0 42px rgba(255, 215, 74, 0.72), inset 0 0 24px rgba(255, 255, 255, 0.14); }
+    }
+
+    @keyframes fillWave {
+      from { background-position: 0 0; }
+      to { background-position: 80px 0; }
+    }
+
+    @keyframes slowSpin {
+      to { transform: rotate(1turn); }
+    }
+
+    @keyframes drawLine {
+      from { stroke-dashoffset: 280; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    @media (min-width: 520px) {
+      .app {
+        padding-top: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar">
+      <div>
+        <div class="eyebrow">ENERGY FLOW PRO</div>
+        <h1>Domowy bilans energii</h1>
+      </div>
+      <div class="clock" id="clock">--:--</div>
+    </section>
+
+    <section class="hero" aria-label="Animowany przeplyw energii">
+      <div class="orbit">
+        <div class="orbit-line"></div>
+        <div class="time-label left">06:12</div>
+        <div class="time-label right">18:05</div>
+        <div class="sun">☀</div>
+        <div class="sun-value" id="pvTop">5.36 kW</div>
+      </div>
+
+      <div class="flow-line vertical pv-flow"></div>
+      <div class="flow-line horizontal battery-flow"></div>
+      <div class="flow-line horizontal grid-flow"></div>
+      <div class="flow-line vertical home-flow"></div>
+      <div class="flow-line horizontal ev-flow"></div>
+
+      <div class="node inverter">
+        <div class="node-icon">⚡</div>
+        <div class="node-name">Inwerter</div>
+        <div class="node-value" id="inverterTemp">49.7 °C</div>
+        <div class="node-sub">online · eco</div>
+      </div>
+
+      <div class="node battery-block">
+        <div class="battery-shell">
+          <div class="battery-fill" id="batteryFill"></div>
+          <div class="battery-bolt">⚡</div>
+        </div>
+        <div class="side-label">
+          <span>Bank energii</span>
+          <strong id="soc">96%</strong>
+          <em id="batteryPower">4.07 kW · ladowanie</em>
+        </div>
+      </div>
+
+      <div class="node grid-block">
+        <div class="side-label right">
+          <span>Siec</span>
+          <strong id="gridPower">-0.65 kW</strong>
+          <em>eksport</em>
+        </div>
+        <div class="tower">⌁</div>
+      </div>
+
+      <div class="node home-block">
+        <div class="house">⌂</div>
+        <div class="home-text">
+          <span>Dom</span>
+          <strong id="homePower">1.22 kW</strong>
+        </div>
+      </div>
+
+      <div class="node ev-block">
+        <div class="car">▰</div>
+        <div>
+          <span>EV</span>
+          <strong id="evPower">0.00 kW</strong>
+        </div>
+      </div>
+
+      <div class="hero-footer">
+        <div><span>PV dzisiaj</span><strong id="pvToday">17.3 kWh</strong></div>
+        <div><span>Bank</span><strong id="batteryToday">9.0 kWh</strong></div>
+        <div><span>Import</span><strong id="importToday">0.8 kWh</strong></div>
+        <div><span>Eksport</span><strong id="exportToday">6.4 kWh</strong></div>
+      </div>
+    </section>
+
+    <h2 class="section-title">Najwazniejsze parametry</h2>
+    <section class="metrics">
+      <article class="metric-card">
+        <div class="metric-top"><span>Produkcja PV</span><div class="metric-icon" style="color: var(--pv)">☀</div></div>
+        <strong id="pvMetric">5.36 kW</strong>
+      </article>
+      <article class="metric-card">
+        <div class="metric-top"><span>Bank energii</span><div class="metric-icon" style="color: var(--battery)">🔋</div></div>
+        <strong id="socMetric">96%</strong>
+      </article>
+      <article class="metric-card">
+        <div class="metric-top"><span>Zuzycie domu</span><div class="metric-icon" style="color: var(--home)">⌂</div></div>
+        <strong id="homeMetric">1.22 kW</strong>
+      </article>
+      <article class="metric-card">
+        <div class="metric-top"><span>Siec</span><div class="metric-icon" style="color: var(--grid)">⌁</div></div>
+        <strong id="gridMetric">-0.65 kW</strong>
+      </article>
+    </section>
+
+    <section class="chart-card">
+      <div class="chart-head">
+        <strong>Moc na zywo · 24h</strong>
+        <div class="legend">
+          <span><i style="background: var(--pv)"></i>PV</span>
+          <span><i style="background: var(--home)"></i>Dom</span>
+          <span><i style="background: var(--battery)"></i>Bank</span>
+        </div>
+      </div>
+      <svg viewBox="0 0 420 170" role="img" aria-label="Wykres mocy">
+        <defs>
+          <linearGradient id="pvGradient" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#ffd84a" stop-opacity="0.55"/>
+            <stop offset="1" stop-color="#ffd84a" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path class="area" d="M0,138 C38,136 54,120 82,102 C116,80 140,56 176,62 C218,68 228,24 264,28 C304,31 318,72 348,82 C378,92 394,110 420,100 L420,170 L0,170 Z" fill="url(#pvGradient)"/>
+        <path class="spark" d="M0,138 C38,136 54,120 82,102 C116,80 140,56 176,62 C218,68 228,24 264,28 C304,31 318,72 348,82 C378,92 394,110 420,100" stroke="#ffd84a"/>
+        <path class="spark" d="M0,108 C36,112 64,118 96,116 C130,112 154,92 188,98 C230,106 246,132 284,126 C322,120 342,94 374,102 C394,106 408,114 420,112" stroke="#64d2ff"/>
+        <path class="spark" d="M0,136 C34,126 58,124 88,130 C128,138 154,146 190,138 C232,130 252,114 286,118 C326,122 348,140 378,136 C396,134 410,128 420,126" stroke="#4de8bd"/>
+      </svg>
+    </section>
+
+    <p class="footer-note">
+      To jest interaktywny podglad frontendu. W Home Assistant dane beda podmienione na Twoje sensory z plikow YAML.
+    </p>
+  </main>
+
+  <script>
+    const formatKw = (value) => `${value.toFixed(2)} kW`;
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+    function updateClock() {
+      document.getElementById("clock").textContent = new Date().toLocaleTimeString("pl-PL", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function updateValues() {
+      const t = Date.now() / 1000;
+      const pv = 5.2 + Math.sin(t / 4) * 0.65 + Math.sin(t / 1.7) * 0.12;
+      const home = 1.28 + Math.sin(t / 5.3) * 0.22;
+      const grid = -0.52 + Math.sin(t / 6.7) * 0.36;
+      const soc = clamp(87 + Math.sin(t / 8) * 9, 0, 100);
+      const battery = Math.max(0, pv - home + Math.abs(Math.min(grid, 0)));
+      const temp = 47.8 + Math.sin(t / 9) * 2.1;
+      const ev = Math.max(0, Math.sin(t / 11) - 0.55) * 3.6;
+
+      document.getElementById("pvTop").textContent = formatKw(pv);
+      document.getElementById("pvMetric").textContent = formatKw(pv);
+      document.getElementById("homePower").textContent = formatKw(home);
+      document.getElementById("homeMetric").textContent = formatKw(home);
+      document.getElementById("gridPower").textContent = formatKw(grid);
+      document.getElementById("gridMetric").textContent = formatKw(grid);
+      document.getElementById("soc").textContent = `${soc.toFixed(0)}%`;
+      document.getElementById("socMetric").textContent = `${soc.toFixed(0)}%`;
+      document.getElementById("batteryFill").style.height = `${soc}%`;
+      document.getElementById("batteryPower").textContent = `${formatKw(battery)} · ladowanie`;
+      document.getElementById("inverterTemp").textContent = `${temp.toFixed(1)} °C`;
+      document.getElementById("evPower").textContent = formatKw(ev);
+    }
+
+    updateClock();
+    updateValues();
+    setInterval(updateClock, 1000);
+    setInterval(updateValues, 900);
+  </script>
+</body>
+</html>
