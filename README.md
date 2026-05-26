@@ -47,6 +47,24 @@ Jesli nie chcesz uzywac HACS, uzyj prostszego pliku `home-assistant-energy-dashb
 4. Podmien encje `sensor.*` na nazwy encji z Twojej instalacji.
 5. Dostosuj zakresy, jednostki i nazwy sensorow do falownika, magazynu energii i licznika.
 
+## Podglad w przegladarce
+
+W katalogu [`preview`](preview/) jest statyczny podglad mobilny animowanego
+dashboardu. Nie wymaga Home Assistanta ani HACS - sluzy tylko do obejrzenia
+stylu i animacji.
+
+Lokalnie mozna go uruchomic tak:
+
+```bash
+python3 -m http.server 8080 --bind 0.0.0.0
+```
+
+Potem otworz:
+
+```text
+http://localhost:8080/preview/
+```
+
 ## Encje do podmiany
 
 Dashboard zaklada nastepujace encje. Nazwy sa przykladowe:
