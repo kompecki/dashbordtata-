@@ -1,0 +1,929 @@
+title: Energia Flow Pro
+button_card_templates:
+  glass_metric:
+    show_icon: true
+    show_name: true
+    show_label: true
+    tap_action:
+      action: more-info
+    styles:
+      card:
+        - border-radius: 22px
+        - padding: 16px
+        - min-height: 108px
+        - background: linear-gradient(145deg, rgba(21, 33, 54, 0.92), rgba(8, 15, 29, 0.96))
+        - border: 1px solid rgba(120, 190, 255, 0.18)
+        - box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.08)
+        - backdrop-filter: blur(18px)
+      grid:
+        - grid-template-areas: '"i n" "i l"'
+        - grid-template-columns: 44px 1fr
+        - grid-template-rows: min-content 1fr
+        - column-gap: 12px
+      icon:
+        - width: 30px
+        - color: var(--metric-color, #ffd85a)
+        - filter: drop-shadow(0 0 12px var(--metric-glow, rgba(255, 216, 90, 0.55)))
+      img_cell:
+        - width: 44px
+        - height: 44px
+        - border-radius: 16px
+        - background: rgba(255, 255, 255, 0.07)
+      name:
+        - justify-self: start
+        - align-self: end
+        - color: rgba(226, 241, 255, 0.72)
+        - font-size: 12px
+        - font-weight: 700
+        - letter-spacing: 0.08em
+        - text-transform: uppercase
+      label:
+        - justify-self: start
+        - align-self: start
+        - color: "#ffffff"
+        - font-size: 24px
+        - font-weight: 800
+        - line-height: 1.2
+
+  glass_chip:
+    show_icon: true
+    show_name: true
+    show_label: true
+    tap_action:
+      action: more-info
+    styles:
+      card:
+        - border-radius: 18px
+        - padding: 12px
+        - min-height: 74px
+        - background: rgba(10, 20, 36, 0.72)
+        - border: 1px solid rgba(255, 255, 255, 0.08)
+        - box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07)
+      grid:
+        - grid-template-areas: '"i n" "i l"'
+        - grid-template-columns: 32px 1fr
+        - column-gap: 10px
+      icon:
+        - width: 22px
+        - color: var(--chip-color, #63e6be)
+      img_cell:
+        - width: 32px
+        - height: 32px
+        - border-radius: 12px
+        - background: rgba(255, 255, 255, 0.06)
+      name:
+        - justify-self: start
+        - color: rgba(226, 241, 255, 0.64)
+        - font-size: 11px
+        - font-weight: 700
+        - letter-spacing: 0.06em
+        - text-transform: uppercase
+      label:
+        - justify-self: start
+        - color: "#ffffff"
+        - font-size: 16px
+        - font-weight: 800
+
+views:
+  - title: Flow
+    path: energy-flow-wow
+    icon: mdi:lightning-bolt-circle
+    cards:
+      - type: custom:button-card
+        show_name: false
+        show_icon: false
+        tap_action:
+          action: none
+        hold_action:
+          action: none
+        custom_fields:
+          header: |
+            [[[
+              const now = new Date();
+              const time = now.toLocaleTimeString('pl-PL', {hour: '2-digit', minute: '2-digit'});
+              return `
+                <div class="hero-title">
+                  <div>
+                    <div class="kicker">ENERGY FLOW</div>
+                    <div class="title">Domowy bilans energii</div>
+                  </div>
+                  <div class="clock">${time}</div>
+                </div>
+              `;
+            ]]]
+          orbit: |
+            [[[
+              const pv = Number(states['sensor.pv_power']?.state || 0);
+              const pvText = Number.isFinite(pv) ? `${(pv / 1000).toFixed(2)} kW` : '-';
+              return `
+                <div class="orbit">
+                  <div class="orbit-line"></div>
+                  <div class="sun-core">☀</div>
+                  <div class="sun-value">${pvText}</div>
+                </div>
+              `;
+            ]]]
+          inverter: |
+            [[[
+              const temp = states['sensor.inverter_temperature']?.state ?? states['sensor.energy_bank_temperature']?.state ?? '-';
+              const status = states['sensor.energy_bank_status']?.state ?? 'online';
+              return `
+                <div class="node inverter-node">
+                  <div class="node-icon">⚡</div>
+                  <div class="node-name">Inwerter</div>
+                  <div class="node-value">${temp} °C</div>
+                  <div class="node-sub">${status}</div>
+                </div>
+              `;
+            ]]]
+          battery: |
+            [[[
+              const socRaw = Number(states['sensor.energy_bank_state_of_charge']?.state || 0);
+              const soc = Number.isFinite(socRaw) ? Math.max(0, Math.min(100, socRaw)) : 0;
+              const power = Number(states['sensor.energy_bank_power']?.state || 0);
+              const powerText = Number.isFinite(power) ? `${(power / 1000).toFixed(2)} kW` : '-';
+              const mode = power > 50 ? 'ladowanie' : power < -50 ? 'oddaje energie' : 'standby';
+              return `
+                <div class="battery-wrap">
+                  <div class="battery-shell">
+                    <div class="battery-fill" style="height:${soc}%"></div>
+                    <div class="battery-bolt">⚡</div>
+                  </div>
+                  <div class="side-label">
+                    <span>Bank energii</span>
+                    <strong>${soc.toFixed(0)}%</strong>
+                    <em>${powerText} · ${mode}</em>
+                  </div>
+                </div>
+              `;
+            ]]]
+          grid: |
+            [[[
+              const grid = Number(states['sensor.grid_power']?.state || 0);
+              const text = Number.isFinite(grid) ? `${(grid / 1000).toFixed(2)} kW` : '-';
+              const mode = grid > 50 ? 'import' : grid < -50 ? 'eksport' : 'zero';
+              return `
+                <div class="grid-wrap">
+                  <div class="tower">⌁</div>
+                  <div class="side-label right">
+                    <span>Siec</span>
+                    <strong>${text}</strong>
+                    <em>${mode}</em>
+                  </div>
+                </div>
+              `;
+            ]]]
+          home: |
+            [[[
+              const load = Number(states['sensor.house_power']?.state || 0);
+              const text = Number.isFinite(load) ? `${(load / 1000).toFixed(2)} kW` : '-';
+              return `
+                <div class="home-node">
+                  <div class="house">⌂</div>
+                  <div class="home-text">
+                    <span>Dom</span>
+                    <strong>${text}</strong>
+                  </div>
+                </div>
+              `;
+            ]]]
+          car: |
+            [[[
+              const ev = states['sensor.ev_charger_power']?.state;
+              const text = ev === undefined ? 'opcjonalnie' : `${(Number(ev) / 1000).toFixed(2)} kW`;
+              return `
+                <div class="car-node">
+                  <div class="car">▰</div>
+                  <div>
+                    <span>EV</span>
+                    <strong>${text}</strong>
+                  </div>
+                </div>
+              `;
+            ]]]
+          pv_flow: <div class="flow-line vertical pv-flow"></div>
+          battery_flow: <div class="flow-line horizontal battery-flow"></div>
+          grid_flow: <div class="flow-line horizontal grid-flow"></div>
+          home_flow: <div class="flow-line vertical home-flow"></div>
+          car_flow: <div class="flow-line horizontal car-flow"></div>
+          footer: |
+            [[[
+              const pvToday = states['sensor.pv_energy_today']?.state ?? '-';
+              const loadToday = states['sensor.house_energy_today']?.state ?? '-';
+              const importToday = states['sensor.grid_import_today']?.state ?? '-';
+              const exportToday = states['sensor.grid_export_today']?.state ?? '-';
+              return `
+                <div class="hero-footer">
+                  <div><span>PV dzisiaj</span><strong>${pvToday} kWh</strong></div>
+                  <div><span>Zuzycie</span><strong>${loadToday} kWh</strong></div>
+                  <div><span>Import</span><strong>${importToday} kWh</strong></div>
+                  <div><span>Eksport</span><strong>${exportToday} kWh</strong></div>
+                </div>
+              `;
+            ]]]
+        styles:
+          card:
+            - height: 640px
+            - padding: 0
+            - overflow: hidden
+            - border-radius: 32px
+            - border: 1px solid rgba(115, 190, 255, 0.20)
+            - background: radial-gradient(circle at 50% 8%, rgba(78, 154, 255, 0.30), transparent 34%), radial-gradient(circle at 15% 35%, rgba(38, 227, 166, 0.16), transparent 32%), linear-gradient(180deg, #07101f 0%, #0b1423 48%, #080d17 100%)
+            - box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08)
+          grid:
+            - grid-template-areas: '"hero"'
+            - grid-template-columns: 1fr
+            - grid-template-rows: 1fr
+          custom_fields:
+            header:
+              - position: absolute
+              - left: 22px
+              - right: 22px
+              - top: 18px
+              - z-index: 4
+            orbit:
+              - position: absolute
+              - left: 6%
+              - right: 6%
+              - top: 74px
+              - height: 128px
+              - z-index: 2
+            inverter:
+              - position: absolute
+              - left: 50%
+              - top: 232px
+              - transform: translateX(-50%)
+              - z-index: 5
+            battery:
+              - position: absolute
+              - left: 18px
+              - top: 214px
+              - z-index: 5
+            grid:
+              - position: absolute
+              - right: 18px
+              - top: 226px
+              - z-index: 5
+            home:
+              - position: absolute
+              - left: 50%
+              - top: 404px
+              - transform: translateX(-50%)
+              - z-index: 5
+            car:
+              - position: absolute
+              - right: 18px
+              - top: 408px
+              - z-index: 5
+            pv_flow:
+              - position: absolute
+              - left: calc(50% - 2px)
+              - top: 172px
+              - width: 4px
+              - height: 98px
+              - z-index: 3
+            battery_flow:
+              - position: absolute
+              - left: 116px
+              - top: 304px
+              - width: calc(50% - 180px)
+              - height: 4px
+              - z-index: 3
+            grid_flow:
+              - position: absolute
+              - right: 116px
+              - top: 304px
+              - width: calc(50% - 180px)
+              - height: 4px
+              - z-index: 3
+            home_flow:
+              - position: absolute
+              - left: calc(50% - 2px)
+              - top: 330px
+              - width: 4px
+              - height: 94px
+              - z-index: 3
+            car_flow:
+              - position: absolute
+              - right: 94px
+              - top: 458px
+              - width: calc(50% - 154px)
+              - height: 4px
+              - z-index: 3
+            footer:
+              - position: absolute
+              - left: 14px
+              - right: 14px
+              - bottom: 14px
+              - z-index: 4
+        extra_styles: |
+          @keyframes energyDown {
+            from { background-position: 0 0; }
+            to { background-position: 0 72px; }
+          }
+          @keyframes energySide {
+            from { background-position: 0 0; }
+            to { background-position: 72px 0; }
+          }
+          @keyframes floatSun {
+            0%, 100% { transform: translate(-50%, 0) scale(1); }
+            50% { transform: translate(-50%, -10px) scale(1.08); }
+          }
+          @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 74, 0.35), inset 0 0 18px rgba(255, 255, 255, 0.08); }
+            50% { box-shadow: 0 0 42px rgba(255, 215, 74, 0.72), inset 0 0 24px rgba(255, 255, 255, 0.14); }
+          }
+          @keyframes fillWave {
+            from { background-position: 0 0; }
+            to { background-position: 80px 0; }
+          }
+          .hero-title {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+          }
+          .kicker {
+            color: #7dd3fc;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.24em;
+          }
+          .title {
+            margin-top: 4px;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+          }
+          .clock {
+            color: #dff7ff;
+            font-size: 14px;
+            font-weight: 800;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+          }
+          .orbit {
+            position: relative;
+            height: 128px;
+          }
+          .orbit-line {
+            position: absolute;
+            inset: 22px 0 0 0;
+            border-top: 2px solid rgba(138, 198, 255, 0.38);
+            border-radius: 50% 50% 0 0;
+            transform: perspective(260px) rotateX(54deg);
+            box-shadow: 0 -8px 28px rgba(64, 156, 255, 0.20);
+          }
+          .sun-core {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            color: #2b1b00;
+            background: radial-gradient(circle, #fff6a8 0%, #ffd84a 46%, #ff9f1c 100%);
+            animation: floatSun 4.2s ease-in-out infinite, pulseGlow 2.6s ease-in-out infinite;
+          }
+          .sun-value {
+            position: absolute;
+            left: 50%;
+            top: 54px;
+            transform: translateX(-50%);
+            color: #ffe88a;
+            font-size: 13px;
+            font-weight: 900;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(255, 198, 41, 0.16);
+            border: 1px solid rgba(255, 216, 74, 0.36);
+          }
+          .node {
+            min-width: 126px;
+            padding: 16px 18px;
+            border-radius: 26px;
+            text-align: center;
+            color: #ffffff;
+            background: linear-gradient(160deg, rgba(16, 29, 49, 0.95), rgba(8, 14, 25, 0.95));
+            border: 2px solid rgba(255, 201, 68, 0.78);
+            box-shadow: 0 0 34px rgba(255, 196, 50, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+          }
+          .node-icon {
+            font-size: 22px;
+            margin-bottom: 6px;
+          }
+          .node-name {
+            color: #ffd86b;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+          .node-value {
+            margin-top: 6px;
+            font-size: 18px;
+            font-weight: 900;
+          }
+          .node-sub {
+            margin-top: 4px;
+            color: #56f0a6;
+            font-size: 12px;
+            font-weight: 800;
+          }
+          .battery-wrap,
+          .grid-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .battery-shell {
+            position: relative;
+            width: 54px;
+            height: 104px;
+            overflow: hidden;
+            border-radius: 16px 16px 12px 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(113, 234, 255, 0.46);
+            box-shadow: 0 0 24px rgba(77, 195, 255, 0.24);
+          }
+          .battery-shell::before {
+            content: "";
+            position: absolute;
+            top: -8px;
+            left: 16px;
+            width: 22px;
+            height: 8px;
+            border-radius: 6px 6px 0 0;
+            background: rgba(113, 234, 255, 0.46);
+          }
+          .battery-fill {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, #1dd1a1, #54e8ff, #1dd1a1);
+            background-size: 80px 100%;
+            animation: fillWave 2.2s linear infinite;
+          }
+          .battery-bolt {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: #06111d;
+            font-size: 22px;
+            font-weight: 900;
+          }
+          .side-label {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            color: #ffffff;
+            text-align: left;
+          }
+          .side-label.right {
+            align-items: flex-end;
+            text-align: right;
+          }
+          .side-label span,
+          .home-text span,
+          .car-node span {
+            color: rgba(226, 241, 255, 0.66);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+          }
+          .side-label strong,
+          .home-text strong,
+          .car-node strong {
+            margin-top: 4px;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 900;
+          }
+          .side-label em {
+            margin-top: 2px;
+            color: #8ee6ff;
+            font-size: 11px;
+            font-style: normal;
+            font-weight: 800;
+          }
+          .tower {
+            width: 62px;
+            height: 100px;
+            display: grid;
+            place-items: center;
+            color: #ffe66d;
+            font-size: 58px;
+            border-radius: 22px;
+            background: rgba(255, 230, 109, 0.09);
+            border: 1px solid rgba(255, 230, 109, 0.22);
+            filter: drop-shadow(0 0 20px rgba(255, 230, 109, 0.25));
+          }
+          .home-node,
+          .car-node {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 24px;
+            color: #ffffff;
+            background: rgba(9, 18, 32, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+          }
+          .house {
+            width: 58px;
+            height: 58px;
+            display: grid;
+            place-items: center;
+            border-radius: 20px;
+            color: #07101f;
+            font-size: 42px;
+            background: linear-gradient(145deg, #eaffff, #6ed6ff);
+            box-shadow: 0 0 28px rgba(110, 214, 255, 0.35);
+          }
+          .car {
+            width: 48px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border-radius: 16px;
+            color: #ffffff;
+            background: linear-gradient(145deg, #ff416c, #ffb347);
+            box-shadow: 0 0 28px rgba(255, 88, 92, 0.32);
+          }
+          .flow-line {
+            border-radius: 999px;
+            filter: drop-shadow(0 0 10px rgba(100, 210, 255, 0.50));
+            opacity: 0.92;
+          }
+          .flow-line.vertical {
+            background: linear-gradient(180deg, transparent 0%, rgba(255, 232, 138, 0.2) 15%, #ffe66d 45%, #64d2ff 55%, transparent 86%);
+            background-size: 100% 72px;
+            animation: energyDown 1.05s linear infinite;
+          }
+          .flow-line.horizontal {
+            background: linear-gradient(90deg, transparent 0%, rgba(100, 210, 255, 0.18) 14%, #64d2ff 44%, #6dffbe 60%, transparent 86%);
+            background-size: 72px 100%;
+            animation: energySide 1.15s linear infinite;
+          }
+          .battery-flow {
+            filter: drop-shadow(0 0 10px rgba(109, 255, 190, 0.58));
+          }
+          .grid-flow {
+            filter: drop-shadow(0 0 10px rgba(255, 230, 109, 0.58));
+          }
+          .car-flow {
+            filter: drop-shadow(0 0 10px rgba(255, 93, 126, 0.46));
+          }
+          .hero-footer {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+          }
+          .hero-footer div {
+            min-width: 0;
+            padding: 12px 10px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+          }
+          .hero-footer span {
+            display: block;
+            color: rgba(226, 241, 255, 0.58);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+          .hero-footer strong {
+            display: block;
+            margin-top: 4px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 900;
+          }
+          @media (max-width: 420px) {
+            .title { font-size: 20px; }
+            .clock { display: none; }
+            .side-label em { display: none; }
+            .hero-footer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          }
+
+      - type: grid
+        title: Najwazniejsze parametry
+        columns: 2
+        square: false
+        cards:
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.pv_power
+            icon: mdi:solar-power-variant
+            name: Produkcja PV
+            label: |
+              [[[
+                const value = Number(entity.state || 0);
+                return Number.isFinite(value) ? `${(value / 1000).toFixed(2)} kW` : '-';
+              ]]]
+            styles:
+              card:
+                - --metric-color: "#ffd84a"
+                - --metric-glow: rgba(255, 216, 74, 0.55)
+
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.energy_bank_state_of_charge
+            icon: mdi:home-battery
+            name: Bank energii
+            label: |
+              [[[
+                return `${entity.state ?? '-'}%`;
+              ]]]
+            styles:
+              card:
+                - --metric-color: "#4de8bd"
+                - --metric-glow: rgba(77, 232, 189, 0.55)
+
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.house_power
+            icon: mdi:home-lightning-bolt
+            name: Zuzycie domu
+            label: |
+              [[[
+                const value = Number(entity.state || 0);
+                return Number.isFinite(value) ? `${(value / 1000).toFixed(2)} kW` : '-';
+              ]]]
+            styles:
+              card:
+                - --metric-color: "#64d2ff"
+                - --metric-glow: rgba(100, 210, 255, 0.55)
+
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.grid_power
+            icon: mdi:transmission-tower
+            name: Siec
+            label: |
+              [[[
+                const value = Number(entity.state || 0);
+                return Number.isFinite(value) ? `${(value / 1000).toFixed(2)} kW` : '-';
+              ]]]
+            styles:
+              card:
+                - --metric-color: "#ff7b7b"
+                - --metric-glow: rgba(255, 123, 123, 0.55)
+
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Moc na zywo - ostatnie 24h
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        apex_config:
+          chart:
+            height: 320
+            toolbar:
+              show: false
+          stroke:
+            width: 3
+            curve: smooth
+          fill:
+            type: gradient
+            gradient:
+              shadeIntensity: 0.25
+              opacityFrom: 0.32
+              opacityTo: 0.03
+          grid:
+            borderColor: rgba(255,255,255,0.08)
+          legend:
+            show: false
+        series:
+          - entity: sensor.pv_power
+            name: PV
+            color: "#ffd84a"
+            type: area
+            group_by:
+              duration: 10min
+              func: avg
+          - entity: sensor.house_power
+            name: Dom
+            color: "#64d2ff"
+            type: line
+            group_by:
+              duration: 10min
+              func: avg
+          - entity: sensor.energy_bank_power
+            name: Bank
+            color: "#4de8bd"
+            type: line
+            group_by:
+              duration: 10min
+              func: avg
+          - entity: sensor.grid_power
+            name: Siec
+            color: "#ff7b7b"
+            type: line
+            group_by:
+              duration: 10min
+              func: avg
+
+  - title: Bank
+    path: bank-energii-wow
+    icon: mdi:home-battery
+    cards:
+      - type: grid
+        title: Bank energii
+        columns: 2
+        square: false
+        cards:
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.energy_bank_state_of_charge
+            icon: mdi:battery-heart
+            name: Naladowanie
+            label: "[[[ return `${entity.state ?? '-'}%`; ]]]"
+            styles:
+              card:
+                - --metric-color: "#4de8bd"
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.energy_bank_power
+            icon: mdi:battery-sync
+            name: Moc netto
+            label: |
+              [[[
+                const value = Number(entity.state || 0);
+                return Number.isFinite(value) ? `${(value / 1000).toFixed(2)} kW` : '-';
+              ]]]
+            styles:
+              card:
+                - --metric-color: "#64d2ff"
+          - type: custom:button-card
+            template: glass_chip
+            entity: sensor.energy_bank_charge_power
+            icon: mdi:battery-arrow-up
+            name: Ladowanie
+            label: |
+              [[[
+                const value = Number(entity.state || 0);
+                return Number.isFinite(value) ? `${(value / 1000).toFixed(2)} kW` : '-';
+              ]]]
+          - type: custom:button-card
+            template: glass_chip
+            entity: sensor.energy_bank_discharge_power
+            icon: mdi:battery-arrow-down
+            name: Rozladowanie
+            label: |
+              [[[
+                const value = Number(entity.state || 0);
+                return Number.isFinite(value) ? `${(value / 1000).toFixed(2)} kW` : '-';
+              ]]]
+
+      - type: entities
+        title: Diagnostyka banku
+        show_header_toggle: false
+        entities:
+          - entity: sensor.energy_bank_temperature
+            name: Temperatura banku
+          - entity: sensor.inverter_temperature
+            name: Temperatura inwertera
+          - entity: sensor.energy_bank_energy_charged_today
+            name: Naladowane dzisiaj
+          - entity: sensor.energy_bank_energy_discharged_today
+            name: Oddane dzisiaj
+          - entity: sensor.energy_bank_status
+            name: Tryb pracy
+
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Bank - SOC i moc
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        yaxis:
+          - id: percent
+            min: 0
+            max: 100
+          - id: power
+            opposite: true
+        series:
+          - entity: sensor.energy_bank_state_of_charge
+            name: SOC
+            color: "#4de8bd"
+            yaxis_id: percent
+            type: area
+          - entity: sensor.energy_bank_charge_power
+            name: Ladowanie
+            color: "#64d2ff"
+            yaxis_id: power
+            type: line
+          - entity: sensor.energy_bank_discharge_power
+            name: Rozladowanie
+            color: "#ffb347"
+            yaxis_id: power
+            type: line
+
+  - title: PV / Siec
+    path: pv-siec-wow
+    icon: mdi:solar-panel-large
+    cards:
+      - type: grid
+        title: Produkcja i siec
+        columns: 2
+        square: false
+        cards:
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.pv_energy_today
+            icon: mdi:solar-power-variant
+            name: PV dzisiaj
+            label: "[[[ return `${entity.state ?? '-'} kWh`; ]]]"
+            styles:
+              card:
+                - --metric-color: "#ffd84a"
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.house_energy_today
+            icon: mdi:home-lightning-bolt
+            name: Zuzycie dzisiaj
+            label: "[[[ return `${entity.state ?? '-'} kWh`; ]]]"
+            styles:
+              card:
+                - --metric-color: "#64d2ff"
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.grid_import_today
+            icon: mdi:transmission-tower-import
+            name: Import
+            label: "[[[ return `${entity.state ?? '-'} kWh`; ]]]"
+            styles:
+              card:
+                - --metric-color: "#ff7b7b"
+          - type: custom:button-card
+            template: glass_metric
+            entity: sensor.grid_export_today
+            icon: mdi:transmission-tower-export
+            name: Eksport
+            label: "[[[ return `${entity.state ?? '-'} kWh`; ]]]"
+            styles:
+              card:
+                - --metric-color: "#4de8bd"
+
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Energia dzienna - 14 dni
+          show_states: false
+        graph_span: 14d
+        span:
+          end: day
+        apex_config:
+          chart:
+            height: 320
+            toolbar:
+              show: false
+          plotOptions:
+            bar:
+              borderRadius: 6
+          grid:
+            borderColor: rgba(255,255,255,0.08)
+        series:
+          - entity: sensor.pv_energy_today
+            name: PV
+            color: "#ffd84a"
+            type: column
+            group_by:
+              duration: 1d
+              func: max
+          - entity: sensor.house_energy_today
+            name: Dom
+            color: "#64d2ff"
+            type: column
+            group_by:
+              duration: 1d
+              func: max
+          - entity: sensor.grid_import_today
+            name: Import
+            color: "#ff7b7b"
+            type: column
+            group_by:
+              duration: 1d
+              func: max
+          - entity: sensor.grid_export_today
+            name: Eksport
+            color: "#4de8bd"
+            type: column
+            group_by:
+              duration: 1d
+              func: max
